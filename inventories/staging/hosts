@@ -1,0 +1,23 @@
+# Staging Environment Inventory
+
+[loadbalancers]
+lb-staging-01 ansible_host=10.0.1.10
+
+[webservers]
+web-staging-01 ansible_host=10.0.1.20
+web-staging-02 ansible_host=10.0.1.21
+web-staging-03 ansible_host=10.0.1.22
+
+[staging:children]
+loadbalancers
+webservers
+
+[staging:vars]
+# Environment identifier
+env_name=staging
+env_color=yellow
+
+# Connection settings
+ansible_user=deploy
+ansible_ssh_private_key_file=~/.ssh/staging_key
+ansible_python_interpreter=/usr/bin/python3
