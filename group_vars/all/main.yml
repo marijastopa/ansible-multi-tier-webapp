@@ -1,0 +1,37 @@
+---
+# Variables for all hosts
+
+# Common packages
+common_packages:
+  - vim
+  - curl
+  - wget
+  - git
+  - htop
+  - net-tools
+  - ufw
+
+# Timezone
+timezone: Europe/Belgrade
+
+# NTP servers
+ntp_servers:
+  - 0.rs.pool.ntp.org
+  - 1.rs.pool.ntp.org
+  - 2.rs.pool.ntp.org
+
+# Security settings
+ssh_port: 22
+disable_root_login: true
+password_authentication: false
+
+# Firewall defaults
+firewall_allowed_ports:
+  - "22/tcp"  # SSH
+
+# Logging
+log_retention_days: 30
+
+# Application settings
+app_name: "webapp"
+app_version: "1.0.0"
