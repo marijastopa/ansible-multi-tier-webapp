@@ -1,0 +1,105 @@
+---
+# Security hardening tasks
+
+- name: Ensure SSH is installed
+  ansible.builtin.apt:
+    name: openssh-server
+    state: present
+  when: ansible_os_family == "Debian"
+  tags:
+    - security
+
+- name: Backup original SSH configuration
+  ansible.builtin.copy:
+    src: /etc/ssh/sshd_config
+    dest: /etc/ssh/sshd_config.backup
+    remote_src: true
+    force: false
+  tags:
+    - security
+
+- name: Configure SSH daemon for security
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0600'
+    backup: true
+    validate: '/usr/sbin/sshd -t -f %s'
+  notify: restart sshd
+  tags:
+    - security
+
+- name: Ensure SSH service is running and enabled
+  ansible.builtin.service:
+    name: sshd
+    state: started
+    enabled: true
+  tags:
+    - security
+
+- name: Install fail2ban
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+  when: 
+    - ansible_os_family == "Debian"
+    - fail2ban_enabled | bool
+  tags:
+    - security
+
+- name: Configure fail2ban for SSH
+  ansible.builtin.copy:
+    content: |
+      [DEFAULT]
+      bantime = {{ fail2ban_bantime }}
+      findtime = {{ fail2ban_findtime }}
+      maxretry = {{ fail2ban_maxretry }}
+
+      [sshd]
+      enabled = true
+      port = {{ ssh_port }}
+      logpath = /var/log/auth.log
+      backend = systemd
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: '0644'
+  when: fail2ban_enabled | bool
+  notify: restart fail2ban
+  tags:
+    - security
+
+- name: Ensure fail2ban is running and enabled
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: true
+  when: fail2ban_enabled | bool
+  tags:
+    - security
+
+- name: Disable root login via password
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin'
+    line: 'PermitRootLogin prohibit-password'
+    state: present
+  notify: restart sshd
+  tags:
+    - security
+
+- name: Set proper permissions on sensitive files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    mode: "{{ item.mode }}"
+    owner: root
+    group: root
+  loop:
+    - { path: '/etc/ssh/sshd_config', mode: '0600' }
+    - { path: '/etc/passwd', mode: '0644' }
+    - { path: '/etc/shadow', mode: '0640' }
+    - { path: '/etc/group', mode: '0644' }
+  tags:
+    - security

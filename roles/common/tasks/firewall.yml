@@ -1,0 +1,74 @@
+---
+# Firewall configuration tasks using UFW
+
+- name: Ensure UFW is installed
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+  when: ansible_os_family == "Debian"
+  tags:
+    - firewall
+
+- name: Reset UFW to default state
+  community.general.ufw:
+    state: reset
+  tags:
+    - firewall
+    - never  # Only run when explicitly tagged
+
+- name: Configure UFW default policies
+  community.general.ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: 'incoming', policy: "{{ firewall_default_policy_incoming }}" }
+    - { direction: 'outgoing', policy: "{{ firewall_default_policy_outgoing }}" }
+    - { direction: 'routed', policy: "{{ firewall_default_policy_forward }}" }
+  tags:
+    - firewall
+
+- name: Allow common firewall rules
+  community.general.ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ common_firewall_rules }}"
+  tags:
+    - firewall
+
+- name: Allow additional group-specific firewall rules
+  community.general.ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ firewall_allowed_ports | default([]) }}"
+  when: firewall_allowed_ports is defined
+  tags:
+    - firewall
+
+- name: Enable UFW logging
+  community.general.ufw:
+    logging: 'on'
+  tags:
+    - firewall
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+  tags:
+    - firewall
+
+- name: Display UFW status
+  ansible.builtin.command: ufw status verbose
+  register: ufw_status
+  changed_when: false
+  tags:
+    - firewall
+
+- name: Show UFW configuration
+  ansible.builtin.debug:
+    var: ufw_status.stdout_lines
+  tags:
+    - firewall
