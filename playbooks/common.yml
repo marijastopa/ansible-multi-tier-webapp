@@ -1,0 +1,25 @@
+---
+# Common configuration playbook
+# Apply base system configuration to all hosts
+
+- name: Apply common configuration to all hosts
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Display common configuration info
+      ansible.builtin.debug:
+        msg: |
+          Applying common configuration to {{ inventory_hostname }}
+          Environment: {{ env_name | default('development') }}
+
+  roles:
+    - role: common
+      tags:
+        - common
+
+  post_tasks:
+    - name: Verify common configuration
+      ansible.builtin.debug:
+        msg: "Common configuration applied successfully on {{ inventory_hostname }}"

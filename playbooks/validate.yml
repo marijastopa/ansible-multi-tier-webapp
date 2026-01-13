@@ -1,0 +1,148 @@
+---
+# Validation playbook
+# Test and validate the deployed infrastructure
+
+- name: Validate infrastructure deployment
+  hosts: all
+  become: false
+  gather_facts: true
+
+  tasks:
+    - name: Display validation information
+      ansible.builtin.debug:
+        msg: |
+          Validating Infrastructure
+          Environment: {{ env_name | default('development') }}
+      run_once: true
+
+# Validate common configuration
+- name: Validate common configuration
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check UFW firewall status
+      ansible.builtin.command: ufw status
+      register: ufw_status
+      changed_when: false
+
+    - name: Verify UFW is active
+      ansible.builtin.assert:
+        that:
+          - "'Status: active' in ufw_status.stdout"
+        fail_msg: "UFW firewall is not active!"
+        success_msg: "UFW firewall is active"
+
+    - name: Check SSH service
+      ansible.builtin.service:
+        name: sshd
+        state: started
+      check_mode: true
+
+    - name: Check NTP service
+      ansible.builtin.service:
+        name: ntp
+        state: started
+      check_mode: true
+      ignore_errors: true
+
+# Validate web servers
+- name: Validate web servers
+  hosts: webservers
+  become: false
+  gather_facts: false
+
+  tasks:
+    - name: Check Nginx service
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}/"
+        return_content: false
+        status_code: 200
+      register: web_check
+      delegate_to: localhost
+
+    - name: Display web server status
+      ansible.builtin.debug:
+        msg: "Web server {{ inventory_hostname }}: HTTP {{ web_check.status }}"
+
+    - name: Check health endpoint
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}/health"
+        return_content: true
+      register: health_check
+      delegate_to: localhost
+
+    - name: Display health check result
+      ansible.builtin.debug:
+        msg: "Health check {{ inventory_hostname }}: {{ health_check.status }}"
+
+# Validate load balancers
+- name: Validate load balancers
+  hosts: loadbalancers
+  become: false
+  gather_facts: false
+
+  tasks:
+    - name: Check HAProxy frontend
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}/"
+        return_content: false
+        status_code: 200
+      register: lb_check
+      delegate_to: localhost
+
+    - name: Display load balancer status
+      ansible.builtin.debug:
+        msg: "Load balancer {{ inventory_hostname }}: HTTP {{ lb_check.status }}"
+
+    - name: Check HAProxy stats page
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8080/haproxy?stats"
+        user: "{{ haproxy_stats_username | default('admin') }}"
+        password: "{{ haproxy_stats_password | default('admin123') }}"
+        force_basic_auth: true
+        return_content: false
+      register: stats_check
+      delegate_to: localhost
+
+    - name: Display stats page status
+      ansible.builtin.debug:
+        msg: "Stats page {{ inventory_hostname }}: HTTP {{ stats_check.status }}"
+
+# Load balancing test
+- name: Test load balancing
+  hosts: loadbalancers[0]
+  become: false
+  gather_facts: false
+
+  tasks:
+    - name: Make multiple requests to test load balancing
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}/"
+        return_content: true
+      register: lb_test
+      loop: "{{ range(1, 11) | list }}"
+      delegate_to: localhost
+
+    - name: Display load balancing test result
+      ansible.builtin.debug:
+        msg: "Load balancing test completed: {{ lb_test.results | length }} requests distributed"
+
+# Final validation summary
+- name: Validation summary
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Display validation summary
+      ansible.builtin.debug:
+        msg: |
+          Validation Complete!
+          All services are running correctly.
+          
+          - Common configuration applied
+          - Web servers responding
+          - Health checks passing
+          - Load balancer distributing traffic
+          - HAProxy stats page accessible

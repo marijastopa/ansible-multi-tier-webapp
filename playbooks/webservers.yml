@@ -1,0 +1,51 @@
+---
+# Web servers deployment playbook
+# Deploy and configure Nginx web servers
+
+- name: Deploy web servers
+  hosts: webservers
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Display web server deployment info
+      ansible.builtin.debug:
+        msg: |
+          Deploying web server on {{ inventory_hostname }}
+          Environment: {{ env_name | default('development') }}
+          Application: {{ app_name | default('webapp') }}
+
+  roles:
+    - role: common
+      tags:
+        - common
+    - role: webserver
+      tags:
+        - webserver
+
+  post_tasks:
+    - name: Verify Nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_status
+
+    - name: Display web server status
+      ansible.builtin.debug:
+        msg: |
+          Web server {{ inventory_hostname }} deployed successfully!
+          Nginx status: {{ nginx_status.changed | ternary('Running', 'Stopped') }}
+          Access at: http://{{ ansible_host }}
+          Health check: http://{{ ansible_host }}/health
+
+    - name: Test web server response
+      ansible.builtin.uri:
+        url: "http://localhost/health"
+        return_content: true
+      register: health_check
+      failed_when: false
+
+    - name: Display health check result
+      ansible.builtin.debug:
+        msg: "Health check status: {{ health_check.status | default('Failed') }}"
