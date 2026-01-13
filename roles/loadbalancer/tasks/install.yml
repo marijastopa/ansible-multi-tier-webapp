@@ -1,0 +1,69 @@
+---
+# HAProxy installation tasks
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+  tags:
+    - install
+
+- name: Install HAProxy
+  ansible.builtin.apt:
+    name: "{{ haproxy_package }}"
+    state: present
+  when: ansible_os_family == "Debian"
+  tags:
+    - install
+
+- name: Install rsyslog for HAProxy logging
+  ansible.builtin.apt:
+    name: rsyslog
+    state: present
+  when:
+    - ansible_os_family == "Debian"
+    - haproxy_rsyslog_enabled | bool
+  tags:
+    - install
+
+- name: Ensure HAProxy service is enabled and started
+  ansible.builtin.service:
+    name: "{{ haproxy_service }}"
+    state: started
+    enabled: true
+  tags:
+    - install
+
+- name: Check HAProxy version
+  ansible.builtin.command: haproxy -v
+  register: haproxy_version
+  changed_when: false
+  tags:
+    - install
+
+- name: Display HAProxy version
+  ansible.builtin.debug:
+    msg: "{{ haproxy_version.stdout }}"
+  tags:
+    - install
+
+- name: Create HAProxy runtime directory
+  ansible.builtin.file:
+    path: /run/haproxy
+    state: directory
+    owner: "{{ haproxy_user }}"
+    group: "{{ haproxy_group }}"
+    mode: '0755'
+  tags:
+    - install
+
+- name: Create HAProxy chroot directory
+  ansible.builtin.file:
+    path: "{{ haproxy_global_chroot }}"
+    state: directory
+    owner: "{{ haproxy_user }}"
+    group: "{{ haproxy_group }}"
+    mode: '0755'
+  tags:
+    - install

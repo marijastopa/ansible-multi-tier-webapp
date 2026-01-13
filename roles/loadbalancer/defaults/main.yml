@@ -1,0 +1,81 @@
+---
+# Default variables for loadbalancer role
+
+# HAProxy package and service
+haproxy_package: haproxy
+haproxy_service: haproxy
+haproxy_user: haproxy
+haproxy_group: haproxy
+
+# HAProxy global settings
+haproxy_global_maxconn: 4096
+haproxy_global_log: "/dev/log local0"
+haproxy_global_chroot: "/var/lib/haproxy"
+haproxy_global_stats_socket: "/run/haproxy/admin.sock mode 660 level admin"
+haproxy_global_daemon: true
+
+# HAProxy defaults
+haproxy_defaults_mode: http
+haproxy_defaults_log: global
+haproxy_defaults_option:
+  - httplog
+  - dontlognull
+  - http-server-close
+  - forwardfor except 127.0.0.0/8
+  - redispatch
+haproxy_defaults_timeout_connect: 5000ms
+haproxy_defaults_timeout_client: 50000ms
+haproxy_defaults_timeout_server: 50000ms
+haproxy_defaults_retries: 3
+
+# Frontend configuration
+haproxy_frontend_name: "{{ app_name | default('webapp') }}_frontend"
+haproxy_frontend_bind_address: "*"
+haproxy_frontend_bind_port: 80
+haproxy_frontend_ssl_port: 443
+haproxy_frontend_mode: http
+haproxy_frontend_default_backend: "{{ app_name | default('webapp') }}_backend"
+
+# Backend configuration
+haproxy_backend_name: "{{ app_name | default('webapp') }}_backend"
+haproxy_backend_mode: http
+haproxy_backend_balance: roundrobin
+haproxy_backend_cookie: "SERVERID insert indirect nocache"
+
+# Health check configuration
+haproxy_health_check_enabled: true
+haproxy_health_check_method: GET
+haproxy_health_check_uri: "/health"
+haproxy_health_check_interval: 3s
+haproxy_health_check_timeout: 2s
+haproxy_health_check_rise: 2
+haproxy_health_check_fall: 3
+
+# Stats page configuration
+haproxy_stats_enabled: true
+haproxy_stats_uri: "/haproxy?stats"
+haproxy_stats_port: 8080
+haproxy_stats_refresh: 30s
+haproxy_stats_realm: "HAProxy Statistics"
+haproxy_stats_auth_enabled: true
+haproxy_stats_username: "admin"
+haproxy_stats_password: "{{ vault_admin_password | default('admin123') }}"
+
+# SSL configuration (optional)
+haproxy_ssl_enabled: false
+haproxy_ssl_certificate_path: "/etc/ssl/certs/{{ app_name | default('webapp') }}.pem"
+
+# Firewall rules
+loadbalancer_firewall_rules:
+  - port: "{{ haproxy_frontend_bind_port }}"
+    proto: tcp
+    rule: allow
+    comment: "HTTP"
+  - port: "{{ haproxy_stats_port }}"
+    proto: tcp
+    rule: allow
+    comment: "HAProxy Stats"
+
+# Logging
+haproxy_log_enabled: true
+haproxy_rsyslog_enabled: true

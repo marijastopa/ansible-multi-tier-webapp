@@ -1,0 +1,100 @@
+---
+# HAProxy configuration tasks
+
+- name: Backup original HAProxy configuration
+  ansible.builtin.copy:
+    src: /etc/haproxy/haproxy.cfg
+    dest: /etc/haproxy/haproxy.cfg.backup
+    remote_src: true
+    force: false
+  tags:
+    - configure
+
+- name: Configure HAProxy
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+    validate: 'haproxy -c -f %s'
+  notify:
+    - test haproxy
+    - reload haproxy
+  tags:
+    - configure
+
+- name: Configure rsyslog for HAProxy logging
+  ansible.builtin.copy:
+    content: |
+      # HAProxy logging configuration
+      $ModLoad imudp
+      $UDPServerRun 514
+      $UDPServerAddress 127.0.0.1
+
+      # Create separate log files for HAProxy
+      local0.* /var/log/haproxy.log
+      & stop
+    dest: /etc/rsyslog.d/49-haproxy.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: haproxy_rsyslog_enabled | bool
+  notify: restart rsyslog
+  tags:
+    - configure
+
+- name: Create HAProxy log file
+  ansible.builtin.file:
+    path: /var/log/haproxy.log
+    state: touch
+    owner: syslog
+    group: adm
+    mode: '0640'
+  when: haproxy_log_enabled | bool
+  tags:
+    - configure
+
+- name: Configure log rotation for HAProxy
+  ansible.builtin.copy:
+    content: |
+      /var/log/haproxy.log {
+          daily
+          rotate 14
+          missingok
+          notifempty
+          compress
+          delaycompress
+          postrotate
+              /usr/lib/rsyslog/rsyslog-rotate
+          endscript
+      }
+    dest: /etc/logrotate.d/haproxy
+    owner: root
+    group: root
+    mode: '0644'
+  when: haproxy_log_enabled | bool
+  tags:
+    - configure
+
+- name: Test HAProxy configuration
+  ansible.builtin.command: haproxy -c -f /etc/haproxy/haproxy.cfg
+  register: haproxy_test_result
+  changed_when: false
+  tags:
+    - configure
+
+- name: Display HAProxy test results
+  ansible.builtin.debug:
+    var: haproxy_test_result.stdout_lines
+  tags:
+    - configure
+
+- name: Ensure HAProxy is running
+  ansible.builtin.service:
+    name: "{{ haproxy_service }}"
+    state: started
+    enabled: true
+  tags:
+    - configure

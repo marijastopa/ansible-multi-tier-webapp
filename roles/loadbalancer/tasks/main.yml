@@ -1,0 +1,38 @@
+---
+# Main tasks file for loadbalancer role
+# This file orchestrates all loadbalancer configuration tasks
+
+- name: Display loadbalancer role execution
+  ansible.builtin.debug:
+    msg: "Configuring HAProxy load balancer on {{ inventory_hostname }}"
+  tags:
+    - always
+
+- name: Install HAProxy
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - install
+    - loadbalancer
+
+- name: Configure HAProxy
+  ansible.builtin.import_tasks: configure.yml
+  tags:
+    - configure
+    - loadbalancer
+
+- name: Configure firewall for load balancer
+  community.general.ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ loadbalancer_firewall_rules }}"
+  tags:
+    - firewall
+    - loadbalancer
+
+- name: Loadbalancer role execution completed
+  ansible.builtin.debug:
+    msg: "HAProxy load balancer configured successfully on {{ inventory_hostname }}"
+  tags:
+    - always
