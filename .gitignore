@@ -10,6 +10,7 @@ ansible.log
 *credentials*
 group_vars/*/vault.yml
 host_vars/*/vault.yml
+.vault_pass
 
 # Fact caching
 /tmp/ansible_facts_cache
