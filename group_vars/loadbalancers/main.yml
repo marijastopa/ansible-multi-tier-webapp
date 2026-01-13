@@ -1,0 +1,64 @@
+---
+# Variables for loadbalancers group
+
+# HAProxy settings
+haproxy_version: "2.8"
+haproxy_user: haproxy
+haproxy_group: haproxy
+
+# Global settings
+haproxy_global_maxconn: 4096
+haproxy_global_chroot: /var/lib/haproxy
+haproxy_global_user: "{{ haproxy_user }}"
+haproxy_global_group: "{{ haproxy_group }}"
+haproxy_global_daemon: true
+
+# Default settings
+haproxy_defaults_mode: http
+haproxy_defaults_timeout_connect: 5000ms
+haproxy_defaults_timeout_client: 50000ms
+haproxy_defaults_timeout_server: 50000ms
+haproxy_defaults_retries: 3
+
+# Frontend settings
+haproxy_frontend_name: "webapp_frontend"
+haproxy_frontend_bind_address: "*"
+haproxy_frontend_bind_port: 80
+haproxy_frontend_ssl_port: 443
+haproxy_frontend_mode: http
+
+# Backend settings
+haproxy_backend_name: "webapp_backend"
+haproxy_backend_mode: http
+haproxy_backend_balance: roundrobin
+haproxy_backend_cookie: "SERVERID insert indirect nocache"
+
+# Health check settings
+haproxy_health_check_interval: 3s
+haproxy_health_check_timeout: 2s
+haproxy_health_check_rise: 2
+haproxy_health_check_fall: 3
+haproxy_health_check_uri: "/health"
+
+# Stats page
+haproxy_stats_enabled: true
+haproxy_stats_uri: "/haproxy?stats"
+haproxy_stats_port: 8080
+haproxy_stats_user: "admin"
+haproxy_stats_password: "{{ vault_admin_password | default('admin123') }}"
+
+# SSL settings
+haproxy_ssl_enabled: true
+haproxy_ssl_certificate_path: "/etc/ssl/certs/{{ app_name }}.pem"
+
+# Firewall rules for load balancers
+firewall_allowed_ports:
+  - "22/tcp"    
+  - "80/tcp"    
+  - "443/tcp"   
+  - "8080/tcp"  # HAProxy stats
+
+# Logging
+haproxy_log_socket: "/dev/log"
+haproxy_log_facility: "local0"
+haproxy_log_level: "info"
