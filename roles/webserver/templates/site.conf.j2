@@ -1,0 +1,79 @@
+# Virtual host configuration for {{ app_name }}
+# {{ ansible_managed }}
+
+{% if ssl_enabled %}
+# HTTP server - redirect to HTTPS
+server {
+    listen {{ http_port }};
+    listen [::]:{{ http_port }};
+    server_name {{ server_name }};
+
+    # Redirect all HTTP requests to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+# HTTPS server
+server {
+    listen {{ https_port }} ssl http2;
+    listen [::]:{{ https_port }} ssl http2;
+    server_name {{ server_name }};
+
+    # SSL configuration
+    ssl_certificate {{ ssl_certificate_path }};
+    ssl_certificate_key {{ ssl_certificate_key_path }};
+    ssl_protocols {{ ssl_protocols }};
+    ssl_ciphers {{ ssl_ciphers }};
+    ssl_prefer_server_ciphers {{ ssl_prefer_server_ciphers }};
+
+    # SSL optimization
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+{% else %}
+# HTTP server (SSL disabled)
+server {
+    listen {{ http_port }};
+    listen [::]:{{ http_port }};
+    server_name {{ server_name }};
+{% endif %}
+
+    # Document root
+    root {{ document_root }};
+    index index.html index.htm;
+
+    # Logging
+    access_log {{ access_log }};
+    error_log {{ error_log }};
+
+    # Main location
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+{% if health_check_enabled %}
+    # Health check endpoint
+    location {{ health_check_path }} {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+{% endif %}
+
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Cache static assets
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}

@@ -1,0 +1,70 @@
+---
+# SSL certificate configuration tasks
+
+- name: Install OpenSSL
+  ansible.builtin.apt:
+    name: openssl
+    state: present
+  when: ansible_os_family == "Debian"
+  tags:
+    - ssl
+
+- name: Create SSL certificate directory
+  ansible.builtin.file:
+    path: /etc/ssl/certs
+    state: directory
+    mode: '0755'
+  tags:
+    - ssl
+
+- name: Create SSL private key directory
+  ansible.builtin.file:
+    path: /etc/ssl/private
+    state: directory
+    mode: '0700'
+  tags:
+    - ssl
+
+- name: Generate self-signed SSL certificate
+  ansible.builtin.command: >
+    openssl req -x509 -nodes -days {{ ssl_days_valid }}
+    -newkey rsa:2048
+    -keyout {{ ssl_certificate_key_path }}
+    -out {{ ssl_certificate_path }}
+    -subj "/C={{ ssl_country }}/ST={{ ssl_state }}/L={{ ssl_locality }}/O={{ ssl_organization }}/CN={{ ssl_common_name }}"
+  args:
+    creates: "{{ ssl_certificate_path }}"
+  notify: reload nginx
+  tags:
+    - ssl
+
+- name: Set permissions on SSL certificate
+  ansible.builtin.file:
+    path: "{{ ssl_certificate_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - ssl
+
+- name: Set permissions on SSL private key
+  ansible.builtin.file:
+    path: "{{ ssl_certificate_key_path }}"
+    owner: root
+    group: root
+    mode: '0600'
+  tags:
+    - ssl
+
+- name: Verify SSL certificate
+  ansible.builtin.command: "openssl x509 -in {{ ssl_certificate_path }} -text -noout"
+  register: ssl_cert_info
+  changed_when: false
+  tags:
+    - ssl
+
+- name: Display SSL certificate info
+  ansible.builtin.debug:
+    msg: "SSL certificate created for {{ ssl_common_name }}, valid for {{ ssl_days_valid }} days"
+  tags:
+    - ssl

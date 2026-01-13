@@ -1,0 +1,27 @@
+---
+# Handlers for webserver role
+
+- name: restart nginx
+  ansible.builtin.service:
+    name: "{{ nginx_service }}"
+    state: restarted
+  listen: "restart nginx"
+
+- name: reload nginx
+  ansible.builtin.service:
+    name: "{{ nginx_service }}"
+    state: reloaded
+  listen: "reload nginx"
+
+- name: test nginx configuration
+  ansible.builtin.command: nginx -t
+  register: nginx_test
+  changed_when: false
+  listen: "test nginx"
+
+- name: enable nginx
+  ansible.builtin.service:
+    name: "{{ nginx_service }}"
+    enabled: true
+    state: started
+  listen: "enable nginx"

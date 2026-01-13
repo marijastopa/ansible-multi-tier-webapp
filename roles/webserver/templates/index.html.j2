@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ index_page_title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            text-align: center;
+        }
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #764ba2;
+            font-size: 1.5em;
+            margin-bottom: 30px;
+        }
+        .info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .value {
+            color: #555;
+        }
+        .status {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 30px;
+            color: #999;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ index_page_title }}</h1>
+        <h2>{{ index_page_subtitle }}</h2>
+        
+        <div class="info">
+            <div class="info-item">
+                <span class="label">Server:</span>
+                <span class="value">{{ inventory_hostname }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Environment:</span>
+                <span class="value">{{ env_name | default('development') }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Application:</span>
+                <span class="value">{{ app_name }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Version:</span>
+                <span class="value">{{ app_version | default('1.0.0') }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">IP Address:</span>
+                <span class="value">{{ ansible_default_ipv4.address | default('N/A') }}</span>
+            </div>
+        </div>
+
+        <div class="status">Server Running</div>
+        
+        <div class="footer">
+            <p>Deployed with Ansible</p>
+            <p>Configuration Management Course - Module 5</p>
+        </div>
+    </div>
+</body>
+</html>

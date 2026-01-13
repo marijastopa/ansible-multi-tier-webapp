@@ -1,0 +1,64 @@
+---
+# Default variables for webserver role
+
+# Nginx package and service
+nginx_package: nginx
+nginx_service: nginx
+nginx_user: www-data
+nginx_group: www-data
+
+# Nginx performance settings
+nginx_worker_processes: auto
+nginx_worker_connections: 1024
+nginx_keepalive_timeout: 65
+nginx_client_max_body_size: 10M
+nginx_server_tokens: "off"
+
+# Application settings
+app_name: "{{ hostvars[inventory_hostname].app_name | default('webapp') }}"
+server_name: "{{ inventory_hostname }}"
+document_root: "/var/www/{{ app_name }}/html"
+
+# Ports
+http_port: 80
+https_port: 443
+
+# SSL configuration
+ssl_enabled: true
+ssl_certificate_path: "/etc/ssl/certs/{{ app_name }}.crt"
+ssl_certificate_key_path: "/etc/ssl/private/{{ app_name }}.key"
+ssl_protocols: "TLSv1.2 TLSv1.3"
+ssl_ciphers: "HIGH:!aNULL:!MD5"
+ssl_prefer_server_ciphers: "on"
+
+# SSL certificate details (for self-signed)
+ssl_country: "RS"
+ssl_state: "Central Serbia"
+ssl_locality: "Belgrade"
+ssl_organization: "DevOps"
+ssl_common_name: "{{ server_name }}"
+ssl_days_valid: 365
+
+# Logging
+access_log: "/var/log/nginx/{{ app_name }}_access.log"
+error_log: "/var/log/nginx/{{ app_name }}_error.log"
+log_format: 'combined'
+
+# Health check
+health_check_enabled: true
+health_check_path: "/health"
+
+# Firewall rules
+webserver_firewall_rules:
+  - port: "{{ http_port }}"
+    proto: tcp
+    rule: allow
+    comment: "HTTP"
+  - port: "{{ https_port }}"
+    proto: tcp
+    rule: allow
+    comment: "HTTPS"
+
+# Index file content
+index_page_title: "Welcome to {{ app_name }}"
+index_page_subtitle: "Running on {{ inventory_hostname }}"

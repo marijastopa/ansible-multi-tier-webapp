@@ -1,0 +1,32 @@
+---
+# Role metadata
+galaxy_info:
+  role_name: webserver
+  author: Marija
+  description: Nginx web server configuration with SSL support
+  company: Configuration Management Course
+  license: MIT
+  min_ansible_version: "2.15"
+  
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+
+  galaxy_tags:
+    - web
+    - nginx
+    - webserver
+    - ssl
+    - https
+
+# Dependencies - webserver depends on common role
+dependencies:
+  - role: common
+    tags:
+      - common
