@@ -1,0 +1,51 @@
+---
+# Main tasks file for webserver role
+# This file orchestrates all webserver configuration tasks
+
+- name: Display webserver role execution
+  ansible.builtin.debug:
+    msg: "Configuring Nginx web server on {{ inventory_hostname }}"
+  tags:
+    - always
+
+- name: Install Nginx
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - install
+    - webserver
+
+- name: Configure Nginx
+  ansible.builtin.import_tasks: configure.yml
+  tags:
+    - configure
+    - webserver
+
+- name: Setup SSL certificates
+  ansible.builtin.import_tasks: ssl.yml
+  when: ssl_enabled | bool
+  tags:
+    - ssl
+    - webserver
+
+- name: Deploy web application
+  ansible.builtin.import_tasks: deploy.yml
+  tags:
+    - deploy
+    - webserver
+
+- name: Configure firewall for web server
+  community.general.ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ webserver_firewall_rules }}"
+  tags:
+    - firewall
+    - webserver
+
+- name: Webserver role execution completed
+  ansible.builtin.debug:
+    msg: "Nginx web server configured successfully on {{ inventory_hostname }}"
+  tags:
+    - always
