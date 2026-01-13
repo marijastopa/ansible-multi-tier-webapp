@@ -1,0 +1,63 @@
+---
+# Load balancers deployment playbook
+# Deploy and configure HAProxy load balancers
+
+- name: Deploy load balancers
+  hosts: loadbalancers
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Display load balancer deployment info
+      ansible.builtin.debug:
+        msg: |
+          Deploying load balancer on {{ inventory_hostname }}
+          Environment: {{ env_name | default('development') }}
+          Backend servers: {{ groups['webservers'] | join(', ') }}
+
+    - name: Verify web servers are defined
+      ansible.builtin.assert:
+        that:
+          - groups['webservers'] is defined
+          - groups['webservers'] | length > 0
+        fail_msg: "No web servers defined in inventory!"
+        success_msg: "Found {{ groups['webservers'] | length }} web server(s)"
+
+  roles:
+    - role: common
+      tags:
+        - common
+    - role: loadbalancer
+      tags:
+        - loadbalancer
+
+  post_tasks:
+    - name: Verify HAProxy is running
+      ansible.builtin.service:
+        name: haproxy
+        state: started
+      check_mode: true
+      register: haproxy_status
+
+    - name: Display load balancer status
+      ansible.builtin.debug:
+        msg: |
+          Load balancer {{ inventory_hostname }} deployed successfully!
+          HAProxy status: {{ haproxy_status.changed | ternary('Running', 'Stopped') }}
+          Access at: http://{{ ansible_host }}
+          Stats page: http://{{ ansible_host }}:8080/haproxy?stats
+          Backend servers: {{ groups['webservers'] | length }}
+
+    - name: Test HAProxy stats page
+      ansible.builtin.uri:
+        url: "http://localhost:8080/haproxy?stats"
+        user: "{{ haproxy_stats_username | default('admin') }}"
+        password: "{{ haproxy_stats_password | default('admin123') }}"
+        force_basic_auth: true
+        return_content: false
+      register: stats_check
+      failed_when: false
+
+    - name: Display stats page status
+      ansible.builtin.debug:
+        msg: "Stats page status: {{ stats_check.status | default('Failed') }}"
