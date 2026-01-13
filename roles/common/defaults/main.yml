@@ -1,0 +1,57 @@
+---
+# Default variables for common role
+# These can be overridden in group_vars or host_vars
+
+# System packages to install
+common_packages:
+  - vim
+  - curl
+  - wget
+  - git
+  - htop
+  - net-tools
+  - ufw
+  - ntp
+  - fail2ban
+
+# Timezone configuration
+timezone: "Europe/Belgrade"
+
+# NTP servers
+ntp_servers:
+  - "0.rs.pool.ntp.org"
+  - "1.rs.pool.ntp.org"
+  - "2.rs.pool.ntp.org"
+
+# SSH configuration
+ssh_port: 22
+ssh_permit_root_login: "no"
+ssh_password_authentication: "no"
+ssh_pubkey_authentication: "yes"
+ssh_max_auth_tries: 3
+ssh_client_alive_interval: 300
+ssh_client_alive_count_max: 2
+
+# Firewall configuration
+firewall_default_policy_incoming: deny
+firewall_default_policy_outgoing: allow
+firewall_default_policy_forward: deny
+
+# Base firewall rules (SSH)
+common_firewall_rules:
+  - port: "{{ ssh_port }}"
+    proto: tcp
+    rule: allow
+    comment: "SSH access"
+
+# Fail2ban configuration
+fail2ban_enabled: true
+fail2ban_bantime: 600
+fail2ban_findtime: 600
+fail2ban_maxretry: 5
+
+# System limits
+system_max_open_files: 65535
+
+# Log rotation
+log_retention_days: 30

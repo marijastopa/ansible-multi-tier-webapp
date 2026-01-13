@@ -1,0 +1,47 @@
+---
+# Package management tasks
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+  tags:
+    - packages
+
+- name: Upgrade all packages to the latest version
+  ansible.builtin.apt:
+    upgrade: dist
+    autoremove: true
+    autoclean: true
+  when: ansible_os_family == "Debian"
+  register: upgrade_result
+  tags:
+    - packages
+
+- name: Display upgrade results
+  ansible.builtin.debug:
+    msg: "{{ upgrade_result.stdout_lines | default('No packages upgraded') }}"
+  when: upgrade_result is defined
+  tags:
+    - packages
+
+- name: Install common packages
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+    update_cache: true
+  when: ansible_os_family == "Debian"
+  tags:
+    - packages
+
+- name: Ensure essential services are enabled and started
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - ntp
+  ignore_errors: true
+  tags:
+    - packages

@@ -1,0 +1,72 @@
+---
+# System configuration tasks
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+  notify: restart ntp
+  tags:
+    - system
+
+- name: Ensure NTP is installed
+  ansible.builtin.apt:
+    name: ntp
+    state: present
+  when: ansible_os_family == "Debian"
+  tags:
+    - system
+
+- name: Configure NTP servers
+  ansible.builtin.template:
+    src: ntp.conf.j2
+    dest: /etc/ntp.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart ntp
+  tags:
+    - system
+
+- name: Ensure NTP service is running and enabled
+  ansible.builtin.service:
+    name: ntp
+    state: started
+    enabled: true
+  tags:
+    - system
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+  tags:
+    - system
+
+- name: Update /etc/hosts with hostname
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ inventory_hostname }}"
+    state: present
+  tags:
+    - system
+
+- name: Configure system limits
+  ansible.builtin.pam_limits:
+    domain: '*'
+    limit_type: '-'
+    limit_item: nofile
+    value: "{{ system_max_open_files }}"
+  tags:
+    - system
+
+- name: Disable unnecessary services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop:
+    - bluetooth
+  ignore_errors: true
+  tags:
+    - system

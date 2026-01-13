@@ -1,0 +1,30 @@
+---
+# Handlers for common role
+
+- name: restart ssh
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+  listen: "restart sshd"
+
+- name: restart ntp
+  ansible.builtin.service:
+    name: ntp
+    state: restarted
+  listen: "restart ntp"
+
+- name: restart fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: restarted
+  listen: "restart fail2ban"
+
+- name: reload ufw
+  community.general.ufw:
+    state: reloaded
+  listen: "reload firewall"
+
+- name: reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+  listen: "reload systemd"
