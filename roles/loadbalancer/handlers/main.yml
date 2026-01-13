@@ -1,0 +1,33 @@
+---
+# Handlers for loadbalancer role
+
+- name: restart haproxy
+  ansible.builtin.service:
+    name: "{{ haproxy_service }}"
+    state: restarted
+  listen: "restart haproxy"
+
+- name: reload haproxy
+  ansible.builtin.service:
+    name: "{{ haproxy_service }}"
+    state: reloaded
+  listen: "reload haproxy"
+
+- name: test haproxy configuration
+  ansible.builtin.command: haproxy -c -f /etc/haproxy/haproxy.cfg
+  register: haproxy_test
+  changed_when: false
+  listen: "test haproxy"
+
+- name: enable haproxy
+  ansible.builtin.service:
+    name: "{{ haproxy_service }}"
+    enabled: true
+    state: started
+  listen: "enable haproxy"
+
+- name: restart rsyslog
+  ansible.builtin.service:
+    name: rsyslog
+    state: restarted
+  listen: "restart rsyslog"
