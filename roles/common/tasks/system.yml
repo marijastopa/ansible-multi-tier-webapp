@@ -16,18 +16,6 @@
   tags:
     - system
 
-- name: Configure NTP servers
-  ansible.builtin.template:
-    src: ntp.conf.j2
-    dest: /etc/ntp.conf
-    owner: root
-    group: root
-    mode: '0644'
-    backup: true
-  notify: restart ntp
-  tags:
-    - system
-
 - name: Ensure NTP service is running and enabled
   ansible.builtin.service:
     name: ntp

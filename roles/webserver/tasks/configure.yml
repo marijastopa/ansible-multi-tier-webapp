@@ -76,16 +76,3 @@
     - reload nginx
   tags:
     - configure
-
-- name: Test Nginx configuration
-  ansible.builtin.command: nginx -t
-  register: nginx_test_result
-  changed_when: false
-  tags:
-    - configure
-
-- name: Display Nginx test results
-  ansible.builtin.debug:
-    var: nginx_test_result.stderr_lines
-  tags:
-    - configure

@@ -2,23 +2,23 @@
 *.retry
 ansible.log
 .vault_pass
-*.vault
-
-# Secrets
-*secret*
-*password*
-*credentials*
-group_vars/*/vault.yml
-host_vars/*/vault.yml
-
-# Fact caching
-/tmp/ansible_facts_cache
-
-# Retry directory
 retry/
+
+# Vagrant
+.vagrant/
+*.log
+vagrant-ssh-config
+
+# Editor files
 *.swp
 *.swo
 *~
+.vscode/
+.idea/
 
 # OS specific
 .DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp

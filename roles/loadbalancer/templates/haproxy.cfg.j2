@@ -81,6 +81,5 @@ backend {{ haproxy_backend_name }}
 {% endif %}
 
     # Web servers from inventory
-{% for host in groups['webservers'] | default([]) %}
-    server {{ host }} {{ hostvars[host]['ansible_host'] | default(host) }}:{{ http_port | default(80) }} check inter {{ haproxy_health_check_interval }} rise {{ haproxy_health_check_rise }} fall {{ haproxy_health_check_fall }} cookie {{ host }}
-{% endfor %}
+    server web-dev-01 192.168.56.20:80 check inter {{ haproxy_health_check_interval }} rise {{ haproxy_health_check_rise }} fall {{ haproxy_health_check_fall }} cookie web-dev-01
+    server web-dev-02 192.168.56.21:80 check inter {{ haproxy_health_check_interval }} rise {{ haproxy_health_check_rise }} fall {{ haproxy_health_check_fall }} cookie web-dev-02
